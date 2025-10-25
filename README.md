@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Manufacturing Order Management System
 
 A Flask web application for managing manufacturing orders with optimization capabilities. Built with separate customer and manufacturer portals and **dynamic configuration support**.
@@ -261,3 +262,6 @@ Internal use only. Contains proprietary optimization logic.
 ## Contact
 
 For questions or support, contact the system administrator.
+=======
+# optimize
+>>>>>>> 7687b92f2b958310922e9b4b2f8a6612a5162434

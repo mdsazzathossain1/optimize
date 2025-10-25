@@ -1,0 +1,11 @@
+{
+  "default_cost_limit": 4200.0,
+  "max_tasks": 10,
+  "num_sections": 3,
+  "machines_per_section": [
+    3,
+    4,
+    2
+  ],
+  "last_updated": "2025-10-25T08:52:04.060523"
+}
