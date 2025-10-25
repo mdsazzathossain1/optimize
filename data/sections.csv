@@ -1,0 +1,4 @@
+section_id,fixed_setup_cost,capacity,output_score_optional
+1,500.0,9,100.0
+2,900.0,12,130.0
+3,600.0,8,110.0

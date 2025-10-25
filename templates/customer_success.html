@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Order Submitted Successfully{% endblock %}
+{% block header %}Order Submitted Successfully!{% endblock %}
+
+{% block content %}
+<div class="card" style="text-align: center;">
+    <div style="font-size: 64px; color: #10b981; margin-bottom: 20px;">✓</div>
+    <h2 style="color: #10b981; border: none;">Thank You for Your Submission!</h2>
+    <p style="font-size: 18px; color: #6b7280; margin: 20px 0;">Your manufacturing order has been received and is being processed.</p>
+    
+    <div style="background: #f9fafb; padding: 20px; border-radius: 10px; margin: 30px 0;">
+        <p style="font-size: 16px; margin-bottom: 10px;"><strong>Order Reference Number:</strong></p>
+        <p style="font-size: 28px; font-weight: 700; color: #667eea;">{{ order_id }}</p>
+    </div>
+    
+    <p style="color: #374151; margin-bottom: 30px;">
+        Please save this reference number for your records. Our team is processing your order and will contact you shortly with the results.
+    </p>
+    
+    <div style="margin-top: 40px;">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Submit Another Order</a>
+    </div>
+</div>
+{% endblock %}

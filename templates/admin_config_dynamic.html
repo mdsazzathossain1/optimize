@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Manufacturer Configuration{% endblock %}
+{% block header %}Manufacturer Configuration{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Manufacturing Infrastructure Setup</h2>
+    <p style="color: #6b7280; margin-bottom: 30px;">
+        Configure your factory sections and machines dynamically. Add or remove sections and machines as needed.
+    </p>
+
+    <form action="{{ url_for('admin_config') }}" method="POST" id="configForm">
+        
+        <!-- Structure Configuration -->
+        <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h3 style="color: #075985;">Factory Structure</h3>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="num_sections">Number of Sections</label>
+                    <input type="number" id="num_sections" name="num_sections" min="1" max="10" 
+                           value="{{ config.structure.num_sections if config.structure else 3 }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="machines_per_section">Machines per Section (comma-separated)</label>
+                    <input type="text" id="machines_per_section" name="machines_per_section" 
+                           placeholder="e.g., 3,4,2 for 3 sections with 3, 4, and 2 machines"
+                           value="{{ config.structure.machines_per_section if config.structure else '3,4,2' }}" required>
+                    <small style="color: #6b7280;">Enter number of machines for each section, separated by commas</small>
+                </div>
+            </div>
+            <button type="button" onclick="generateSections()" class="btn btn-secondary" style="margin-top: 10px;">
+                Generate Section Forms
+            </button>
+        </div>
+
+        <!-- Dynamic Sections Container -->
+        <div id="sectionsContainer">
+            <!-- Sections will be dynamically generated here -->
+        </div>
+
+        <h3>Default Configuration</h3>
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="default_cost_limit">Default Cost Limit ($)</label>
+                <input type="number" id="default_cost_limit" name="default_cost_limit" step="0.01" 
+                       value="{{ config.settings.default_cost_limit if config.settings and config.settings.default_cost_limit else '4200.0' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="max_tasks">Maximum Number of Tasks</label>
+                <input type="number" id="max_tasks" name="max_tasks" min="1" max="50"
+                       value="{{ config.settings.max_tasks if config.settings and config.settings.max_tasks else '10' }}" required>
+                <small style="color: #6b7280;">Cost variations will be generated for this many tasks</small>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center;">
+            <button type="submit" class="btn btn-primary">Save Configuration</button>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="background: #fffbeb; border-left: 4px solid #f59e0b;">
+    <h3 style="color: #92400e; margin-top: 0;">Important Notes</h3>
+    <ul style="color: #78350f; padding-left: 20px;">
+        <li><strong>Dynamic Structure:</strong> You can configure any number of sections and machines per section.</li>
+        <li><strong>Customer Compatibility:</strong> Customer form will automatically adjust to match your configuration.</li>
+        <li><strong>Automatic Processing:</strong> This configuration is used for all customer orders automatically.</li>
+        <li><strong>Cost Generation:</strong> Base costs will be expanded to cover all tasks with small variations (1.5% per task).</li>
+        <li><strong>Updates:</strong> You can modify this anytime - new orders use updated values, old orders keep their snapshots.</li>
+    </ul>
+</div>
+
+<script>
+// Load existing configuration data
+const existingConfig = {{ config | tojson | safe }};
+
+function generateSections() {
+    const numSections = parseInt(document.getElementById('num_sections').value);
+    const machinesInput = document.getElementById('machines_per_section').value;
+    const machinesPerSection = machinesInput.split(',').map(m => parseInt(m.trim())).filter(m => !isNaN(m));
+    
+    if (machinesPerSection.length !== numSections) {
+        alert(`Please enter exactly ${numSections} numbers separated by commas`);
+        return;
+    }
+    
+    const container = document.getElementById('sectionsContainer');
+    container.innerHTML = '';
+    
+    for (let sIdx = 0; sIdx < numSections; sIdx++) {
+        const sectionId = sIdx + 1;
+        const numMachines = machinesPerSection[sIdx];
+        
+        // Get existing data if available
+        const existingSection = existingConfig.sections ? existingConfig.sections.find(s => s.section_id === sectionId) : null;
+        
+        let sectionHTML = `
+            <div class="card" style="background: #fafafa; margin-bottom: 20px;">
+                <h3>Section ${sectionId} Configuration</h3>
+                <input type="hidden" name="section_${sectionId}_id" value="${sectionId}">
+                
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Fixed Setup Cost ($)</label>
+                        <input type="number" name="section_${sectionId}_fixed_cost" step="0.01" 
+                               value="${existingSection ? existingSection.fixed_setup_cost : (500 + sectionId * 100)}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Capacity (max tasks)</label>
+                        <input type="number" name="section_${sectionId}_capacity" 
+                               value="${existingSection ? existingSection.capacity : (8 + numMachines)}" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Output Score (optional, leave blank if not applicable)</label>
+                    <input type="number" name="section_${sectionId}_output_score" step="0.01" 
+                           value="${existingSection && existingSection.output_score_optional ? existingSection.output_score_optional : (100 + sectionId * 10)}">
+                </div>
+                
+                <h4 style="margin-top: 20px;">Machines in Section ${sectionId}</h4>
+        `;
+        
+        for (let mIdx = 0; mIdx < numMachines; mIdx++) {
+            const machineId = mIdx + 1;
+            const machineKey = `${sectionId}_${machineId}`;
+            
+            // Get existing machine data
+            const existingMachine = existingConfig.machines_dict ? existingConfig.machines_dict[`${sectionId},${machineId}`] : null;
+            const existingCost = existingConfig.base_costs ? existingConfig.base_costs[`${sectionId},${machineId}`] : null;
+            
+            sectionHTML += `
+                <div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e5e7eb;">
+                    <h5 style="margin: 0 0 10px 0; color: #374151;">Machine ${machineId}</h5>
+                    <input type="hidden" name="machine_${machineKey}_section" value="${sectionId}">
+                    <input type="hidden" name="machine_${machineKey}_id" value="${machineId}">
+                    
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Time per Task</label>
+                            <input type="number" name="machine_${machineKey}_time" step="0.01" 
+                                   value="${existingMachine ? existingMachine.time_per_task : (1.5 + sectionId * 0.2 + machineId * 0.05).toFixed(2)}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Available? (1=Yes, 0=No)</label>
+                            <input type="number" name="machine_${machineKey}_available" min="0" max="1" 
+                                   value="${existingMachine ? existingMachine.available : 1}" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Base Variable Cost ($)</label>
+                        <input type="number" name="machine_${machineKey}_cost" step="0.01" 
+                               value="${existingCost ? existingCost : (40 + sectionId * 5 + machineId * 3)}" required>
+                        <small style="color: #6b7280;">Will be auto-expanded for all tasks</small>
+                    </div>
+                </div>
+            `;
+        }
+        
+        sectionHTML += `</div>`;
+        container.innerHTML += sectionHTML;
+    }
+}
+
+// Auto-generate on page load if configuration exists
+window.addEventListener('DOMContentLoaded', function() {
+    generateSections();
+});
+</script>
+
+<style>
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #374151;
+}
+
+.form-group input, .form-group textarea, .form-group select {
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.form-group small {
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    margin: 0 5px;
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+}
+
+@media (max-width: 768px) {
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+{% endblock %}

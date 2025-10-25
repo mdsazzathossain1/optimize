@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Order - Manufacturing System{% endblock %}
+{% block header %}Submit Manufacturing Order{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Customer Order Submission</h2>
+    <p style="color: #6b7280; margin-bottom: 30px;">Please fill out all required fields to submit your manufacturing order.</p>
+    
+    <form action="{{ url_for('submit_order') }}" method="POST" enctype="multipart/form-data">
+        
+        <h3>Customer Information</h3>
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="customer_name">Customer Name / Company Name *</label>
+                <input type="text" id="customer_name" name="customer_name" required>
+            </div>
+            <div class="form-group">
+                <label for="order_id">Order Reference Number (optional - auto-generated if blank)</label>
+                <input type="text" id="order_id" name="order_id" placeholder="Leave blank for auto-generation">
+            </div>
+        </div>
+
+        <h3>Product Details</h3>
+        <div class="form-group">
+            <label for="product_description">Product Description *</label>
+            <textarea id="product_description" name="product_description" required placeholder="Describe your product and manufacturing requirements"></textarea>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="num_cad_files">Number of CAD Files / Parts (p) *</label>
+                <input type="number" id="num_cad_files" name="num_cad_files" min="1" max="{{ config.max_tasks if config else 10 }}" required>
+                <small style="color: #6b7280;">Maximum: {{ config.max_tasks if config else 10 }} tasks (based on manufacturer capacity)</small>
+            </div>
+            <div class="form-group">
+                <label for="quantity">Quantity / Batch Size *</label>
+                <input type="text" id="quantity" name="quantity" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="cad_files">Upload CAD Files * (PDF, DWG, DXF, STEP, STL, etc.)</label>
+            <input type="file" id="cad_files" name="cad_files" multiple required>
+            <p class="file-list">Supported formats: PDF, DWG, DXF, STEP, STP, IGS, IGES, STL, JPG, PNG, ZIP</p>
+        </div>
+
+        <h3>Order Requirements</h3>
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="desired_delivery_time">Desired Delivery Time Frame (hours) *</label>
+                <input type="number" id="desired_delivery_time" name="desired_delivery_time" step="0.1" min="0" required placeholder="e.g., 24.0">
+            </div>
+            <div class="form-group">
+                <label for="offered_price">Offered Order Price (Total Amount) *</label>
+                <input type="number" id="offered_price" name="offered_price" step="0.01" min="0" required placeholder="e.g., 6000.00">
+            </div>
+        </div>
+
+        <h3>Technical Specifications</h3>
+        <div class="form-group">
+            <label for="material_specs">Material Specifications / Grade</label>
+            <input type="text" id="material_specs" name="material_specs" placeholder="e.g., Aluminum 6061-T6, Stainless Steel 304">
+        </div>
+
+        <div class="form-group">
+            <label for="surface_finish">Required Surface Finish / Tolerances</label>
+            <input type="text" id="surface_finish" name="surface_finish" placeholder="e.g., Ra 3.2, ±0.05mm">
+        </div>
+
+        <div class="form-group">
+            <label for="testing_requirements">Testing or Inspection Requirements</label>
+            <textarea id="testing_requirements" name="testing_requirements" placeholder="Specify any testing, quality control, or inspection requirements"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="certifications">Certifications / Compliance Requirements</label>
+            <input type="text" id="certifications" name="certifications" placeholder="e.g., ISO 9001, FDA, CE, RoHS">
+        </div>
+
+        <h3>Additional Information</h3>
+        <div class="form-group">
+            <label for="additional_docs">Upload Additional Documents (optional)</label>
+            <input type="file" id="additional_docs" name="additional_docs" multiple>
+            <p class="file-list">Drawings, specifications, reference materials, etc.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="special_instructions">Special Instructions / Notes</label>
+            <textarea id="special_instructions" name="special_instructions" placeholder="Any special handling, packaging, or delivery instructions"></textarea>
+        </div>
+
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="nda_confirmed" name="nda_confirmed" required>
+            <label for="nda_confirmed">I confirm data-sharing agreement and NDA terms *</label>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center;">
+            <button type="submit" class="btn btn-primary">Submit Order</button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

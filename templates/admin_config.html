@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Manufacturer Configuration{% endblock %}
+{% block header %}Manufacturer Configuration{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Configure Manufacturing Data</h2>
+    <p style="color: #6b7280; margin-bottom: 30px;">
+        Set up sections, machines, and cost structures. This data will be used for all order optimizations.
+    </p>
+
+    <form action="{{ url_for('admin_config') }}" method="POST">
+        
+        <h3>Sections Configuration</h3>
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 15px;">
+            Define your factory sections with setup costs, capacities, and optional efficiency scores.
+        </p>
+        <div class="form-group">
+            <label for="sections_json">Sections Data (JSON format)</label>
+            <textarea id="sections_json" name="sections_json" style="font-family: monospace; min-height: 200px;" required>{{ config.sections|tojson(indent=2) if config.sections else '[
+  {"section_id": 1, "fixed_setup_cost": 500.0, "capacity": 9, "output_score_optional": 100.0},
+  {"section_id": 2, "fixed_setup_cost": 900.0, "capacity": 12, "output_score_optional": 130.0},
+  {"section_id": 3, "fixed_setup_cost": 600.0, "capacity": 8, "output_score_optional": 110.0}
+]' }}</textarea>
+            <p class="file-list">Format: List of objects with section_id, fixed_setup_cost, capacity, output_score_optional</p>
+        </div>
+
+        <h3>Machines Configuration</h3>
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 15px;">
+            Define machines for each section, including availability and processing time.
+        </p>
+        <div class="form-group">
+            <label for="machines_json">Machines Data (JSON format)</label>
+            <textarea id="machines_json" name="machines_json" style="font-family: monospace; min-height: 250px;" required>{{ config.machines|tojson(indent=2) if config.machines else '[
+  {"section_id": 1, "machine_id": 1, "available": 1, "time_per_task": 1.7},
+  {"section_id": 1, "machine_id": 2, "available": 1, "time_per_task": 1.85},
+  {"section_id": 1, "machine_id": 3, "available": 1, "time_per_task": 1.95},
+  {"section_id": 2, "machine_id": 1, "available": 1, "time_per_task": 2.0},
+  {"section_id": 2, "machine_id": 2, "available": 0, "time_per_task": 2.1},
+  {"section_id": 2, "machine_id": 3, "available": 1, "time_per_task": 2.15},
+  {"section_id": 2, "machine_id": 4, "available": 1, "time_per_task": 2.2},
+  {"section_id": 3, "machine_id": 1, "available": 1, "time_per_task": 2.3},
+  {"section_id": 3, "machine_id": 2, "available": 1, "time_per_task": 2.4}
+]' }}</textarea>
+            <p class="file-list">Format: List of objects with section_id, machine_id, available (0 or 1), time_per_task</p>
+        </div>
+
+        <h3>Variable Costs Configuration</h3>
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 15px;">
+            Define variable costs for each machine and task combination. Task IDs will be matched to customer orders.
+        </p>
+        <div class="form-group">
+            <label for="costs_json">Costs Data (JSON format) - Example for 6 tasks</label>
+            <textarea id="costs_json" name="costs_json" style="font-family: monospace; min-height: 300px;" required>{{ config.costs|tojson(indent=2) if config.costs else '[
+  {"section_id": 1, "machine_id": 1, "task_id": 1, "variable_cost": 43.5},
+  {"section_id": 1, "machine_id": 1, "task_id": 2, "variable_cost": 44.2},
+  {"section_id": 1, "machine_id": 1, "task_id": 3, "variable_cost": 44.8},
+  {"section_id": 1, "machine_id": 1, "task_id": 4, "variable_cost": 45.5},
+  {"section_id": 1, "machine_id": 1, "task_id": 5, "variable_cost": 46.1},
+  {"section_id": 1, "machine_id": 1, "task_id": 6, "variable_cost": 46.8},
+  {"section_id": 1, "machine_id": 2, "task_id": 1, "variable_cost": 46.2},
+  {"section_id": 1, "machine_id": 2, "task_id": 2, "variable_cost": 47.0},
+  {"section_id": 1, "machine_id": 2, "task_id": 3, "variable_cost": 47.6},
+  {"section_id": 1, "machine_id": 2, "task_id": 4, "variable_cost": 48.3},
+  {"section_id": 1, "machine_id": 2, "task_id": 5, "variable_cost": 49.0},
+  {"section_id": 1, "machine_id": 2, "task_id": 6, "variable_cost": 49.7}
+]' }}</textarea>
+            <p class="file-list">Format: List of objects with section_id, machine_id, task_id, variable_cost. Must cover all section-machine-task combinations you want to allow.</p>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center;">
+            <button type="submit" class="btn btn-primary">Save Configuration</button>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="background: #fffbeb; border-left: 4px solid #f59e0b;">
+    <h3 style="color: #92400e; margin-top: 0;">Configuration Tips</h3>
+    <ul style="color: #78350f; padding-left: 20px;">
+        <li>Ensure all section_id values in machines and costs match those in sections.</li>
+        <li>Set available=0 for machines that are down or unavailable.</li>
+        <li>Variable costs must include entries for all tasks (1 through max p) for each machine you want to use.</li>
+        <li>The system will use these values for all incoming customer orders.</li>
+        <li>You can update this configuration at any time, but already-processed orders will retain their original data.</li>
+    </ul>
+</div>
+{% endblock %}

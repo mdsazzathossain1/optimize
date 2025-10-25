@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Manufacturing System{% endblock %}
+{% block header %}Manufacturer Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>System Configuration</h2>
+    <p style="margin-bottom: 20px;">
+        {% if config_exists %}
+            <span style="color: #10b981; font-weight: 600;">✓ Manufacturer configuration is set up</span>
+        {% else %}
+            <span style="color: #ef4444; font-weight: 600;">⚠ Manufacturer configuration required</span>
+        {% endif %}
+    </p>
+    <a href="{{ url_for('admin_config') }}" class="btn btn-primary">Manage Manufacturer Configuration</a>
+</div>
+
+<div class="card">
+    <h2>Customer Orders</h2>
+    <p style="color: #6b7280; margin-bottom: 20px;">
+        Orders are automatically processed when customers submit them. View results below.
+    </p>
+    {% if orders %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Parts</th>
+                    <th>Offered Price</th>
+                    <th>Delivery Time</th>
+                    <th>Submitted</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td><strong>{{ order.order_id }}</strong></td>
+                    <td>{{ order.customer_name }}</td>
+                    <td>{{ order.num_cad_files }}</td>
+                    <td>${{ "%.2f"|format(order.offered_price) }}</td>
+                    <td>{{ order.desired_delivery_time }}h</td>
+                    <td>{{ order.submission_timestamp[:10] }}</td>
+                    <td>
+                        {% if order.status == 'processed' %}
+                            <span class="badge badge-processed">Processed</span>
+                        {% elif order.status == 'failed' %}
+                            <span class="badge" style="background: #fee2e2; color: #991b1b;">Failed</span>
+                        {% else %}
+                            <span class="badge badge-pending">{{ order.status|title }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.status == 'processed' %}
+                            <a href="{{ url_for('view_results', order_id=order.order_id) }}" class="btn btn-success" style="padding: 6px 12px; font-size: 13px;">View Results</a>
+                        {% elif order.status == 'failed' %}
+                            <span style="color: #991b1b; font-size: 13px;">Optimization failed</span>
+                        {% else %}
+                            <span style="color: #6b7280; font-size: 13px;">Processing...</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="color: #6b7280; text-align: center; padding: 40px;">No orders submitted yet.</p>
+    {% endif %}
+</div>
+
+<div class="nav-links">
+    <p style="color: #6b7280; font-size: 14px;">Access manufacturer portal at: <strong>http://localhost:5000/admin</strong></p>
+</div>
+{% endblock %}

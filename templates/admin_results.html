@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Order Results - {{ order_id }}{% endblock %}
+{% block header %}Optimization Results - {{ order_id }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Customer Order Details</h2>
+    <div class="grid-2">
+        <div>
+            <p><strong>Customer:</strong> {{ customer_data.customer_name }}</p>
+            <p><strong>Order ID:</strong> {{ customer_data.order_id }}</p>
+            <p><strong>Product:</strong> {{ customer_data.product_description }}</p>
+            <p><strong>Quantity:</strong> {{ customer_data.quantity }}</p>
+        </div>
+        <div>
+            <p><strong>Number of Parts:</strong> {{ customer_data.num_cad_files }}</p>
+            <p><strong>Offered Price:</strong> ${{ "%.2f"|format(customer_data.offered_price) }}</p>
+            <p><strong>Desired Time:</strong> {{ customer_data.desired_delivery_time }} hours</p>
+            <p><strong>Submitted:</strong> {{ customer_data.submission_timestamp[:19] }}</p>
+        </div>
+    </div>
+    
+    {% if customer_data.material_specs or customer_data.surface_finish %}
+    <h3>Technical Requirements</h3>
+    <p><strong>Materials:</strong> {{ customer_data.material_specs or 'Not specified' }}</p>
+    <p><strong>Surface Finish:</strong> {{ customer_data.surface_finish or 'Not specified' }}</p>
+    {% if customer_data.testing_requirements %}
+    <p><strong>Testing:</strong> {{ customer_data.testing_requirements }}</p>
+    {% endif %}
+    {% if customer_data.certifications %}
+    <p><strong>Certifications:</strong> {{ customer_data.certifications }}</p>
+    {% endif %}
+    {% endif %}
+    
+    <h3>Uploaded Files</h3>
+    <p><strong>CAD Files:</strong></p>
+    <ul style="margin-left: 20px;">
+        {% for file in customer_data.cad_files %}
+        <li><a href="{{ url_for('download_file', order_id=order_id, filename=file) }}" style="color: #667eea;">{{ file }}</a></li>
+        {% endfor %}
+    </ul>
+    {% if customer_data.additional_docs %}
+    <p><strong>Additional Documents:</strong></p>
+    <ul style="margin-left: 20px;">
+        {% for doc in customer_data.additional_docs %}
+        <li><a href="{{ url_for('download_file', order_id=order_id, filename=doc) }}" style="color: #667eea;">{{ doc }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+
+{% if solution %}
+<div class="card" style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);">
+    <h2>Optimization Solution Summary</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
+        <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
+            <p style="color: #6b7280; font-size: 14px;">Status</p>
+            <p style="font-size: 24px; font-weight: 700; color: #10b981;">{{ solution.status2 }}</p>
+        </div>
+        <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
+            <p style="color: #6b7280; font-size: 14px;">Chosen Section</p>
+            <p style="font-size: 24px; font-weight: 700; color: #667eea;">Section {{ solution.chosen_section }}</p>
+        </div>
+        <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
+            <p style="color: #6b7280; font-size: 14px;">Total Profit</p>
+            <p style="font-size: 24px; font-weight: 700; color: #10b981;">${{ "%.2f"|format(solution.total_profit) }}</p>
+        </div>
+        <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
+            <p style="color: #6b7280; font-size: 14px;">Production Time</p>
+            <p style="font-size: 24px; font-weight: 700; color: #667eea;">{{ "%.2f"|format(solution.time) }}h</p>
+        </div>
+    </div>
+
+    <div class="grid-2" style="margin-top: 20px;">
+        <div>
+            <h3>Financial Breakdown</h3>
+            <p><strong>Revenue:</strong> ${{ "%.2f"|format(solution.total_revenue) }}</p>
+            <p><strong>Total Cost:</strong> ${{ "%.2f"|format(solution.total_cost) }}</p>
+            <p><strong>Profit Margin:</strong> {{ "%.1f"|format((solution.total_profit / solution.total_revenue * 100) if solution.total_revenue > 0 else 0) }}%</p>
+            <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">Cost Limit: ${{ "%.2f"|format(solution.cost_limit) }}</p>
+        </div>
+        <div>
+            <h3>Production Details</h3>
+            <p><strong>Active Machines:</strong> {{ solution.active_machines }}</p>
+            <p><strong>Total Assignments:</strong> {{ solution.assignments }}</p>
+            <p><strong>Section Capacity:</strong> {{ solution.capacity_of_chosen }}</p>
+            <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">Time Limit: {{ "%.2f"|format(solution.time_limit) }}h</p>
+        </div>
+    </div>
+    
+    {% if solution.efficiency_proxy %}
+    <p style="margin-top: 15px;"><strong>Efficiency Score:</strong> {{ "%.4f"|format(solution.efficiency_proxy) }}</p>
+    {% endif %}
+</div>
+
+{% if assignments %}
+<div class="card">
+    <h2>Task Assignments</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Task ID</th>
+                <th>Section</th>
+                <th>Machine</th>
+                <th>Variable Cost</th>
+                <th>Processing Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for assignment in assignments %}
+            <tr>
+                <td><strong>Task {{ assignment.task_id }}</strong></td>
+                <td>Section {{ assignment.section_id }}</td>
+                <td>Machine {{ assignment.machine_id }}</td>
+                <td>${{ "%.2f"|format(assignment.var_cost) }}</td>
+                <td>{{ "%.2f"|format(assignment.time) }}h</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% else %}
+<div class="card" style="background: #fef3c7; border-left: 4px solid #f59e0b;">
+    <p style="color: #92400e; font-weight: 600;">⚠ This order has not been processed yet.</p>
+    <p style="color: #78350f; margin-top: 10px;">Return to the dashboard to process this order.</p>
+</div>
+{% endif %}
+
+<div style="margin-top: 30px; text-align: center;">
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    {% if solution %}
+    <a href="{{ url_for('download_file', order_id=order_id, filename='solution_summary.json') }}" class="btn btn-success">Download Summary JSON</a>
+    <a href="{{ url_for('download_file', order_id=order_id, filename='solution_assignments.csv') }}" class="btn btn-success">Download Assignments CSV</a>
+    {% endif %}
+</div>
+{% endblock %}
